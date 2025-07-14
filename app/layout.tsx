@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Navbar from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: "Placify",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased`}>{children}</body>
+      <body className={`antialiased`}>
+        <Navbar />
+        <main className="pt-14">{children}</main>
+      </body>
     </html>
   );
 }
