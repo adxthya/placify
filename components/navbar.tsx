@@ -2,16 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    window.location.href = "/login";
-  };
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -43,12 +36,6 @@ export default function Navbar() {
               {item.label}
             </Link>
           ))}
-          <button
-            onClick={handleLogout}
-            className="text-sm font-medium text-red-500 hover:text-red-600"
-          >
-            Logout
-          </button>
         </div>
       </div>
     </nav>

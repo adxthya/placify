@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { Timestamp as FBTimestamp } from "firebase/firestore";
 
@@ -26,23 +24,12 @@ interface Submission {
 }
 
 export default function CompanyPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-        await fetchSubmissions();
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+    fetchSubmissions();
+  }, []);
 
   const fetchSubmissions = async () => {
     try {
@@ -63,9 +50,6 @@ export default function CompanyPage() {
     }
   };
 
-  if (!user) return null;
-
-  // Collect all company names
   const allCompanies = new Set<string>();
   submissions.forEach((s) => {
     const keys = Object.keys(s.eligibility || {});
@@ -73,7 +57,7 @@ export default function CompanyPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-100 flex">
+    <main className="min-h-screen bg-gray-100 flex pt-20">
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           Company-wise Eligibility

@@ -1,8 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { db } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -15,8 +13,6 @@ import {
 } from "firebase/firestore";
 
 export default function Home() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [existingDocId, setExistingDocId] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -31,42 +27,30 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-        setFormData((prev) => ({
-          ...prev,
-          name: currentUser.displayName || "",
-          email: currentUser.email || "",
-        }));
-
-        const q = query(
-          collection(db, "submissions"),
-          where("uid", "==", currentUser.uid)
-        );
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-          const docData = snapshot.docs[0].data();
-          setExistingDocId(snapshot.docs[0].id);
-          setFormData({
-            name: docData.name || "",
-            email: docData.email || "",
-            cgpa: docData.cgpa?.toString() || "",
-            stream: docData.stream || "",
-            srNumber: docData.srNumber || "",
-            universityNumber: docData.universityNumber || "",
-          });
-          setSubmitted(true);
-        }
+    const checkExisting = async () => {
+      if (!formData.email) return;
+      const q = query(
+        collection(db, "submissions"),
+        where("email", "==", formData.email)
+      );
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const docData = snapshot.docs[0].data();
+        setExistingDocId(snapshot.docs[0].id);
+        setFormData({
+          name: docData.name || "",
+          email: docData.email || "",
+          cgpa: docData.cgpa?.toString() || "",
+          stream: docData.stream || "",
+          srNumber: docData.srNumber || "",
+          universityNumber: docData.universityNumber || "",
+        });
+        setSubmitted(true);
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, [router]);
-
-  if (!user) return null;
+    checkExisting();
+  }, [formData.email]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -76,17 +60,15 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSuccess(false);
+
+    const submission = {
+      ...formData,
+      cgpa: parseFloat(formData.cgpa),
+      timestamp: Timestamp.now(),
+    };
 
     try {
-      setSuccess(false); // reset
-
-      const submission = {
-        ...formData,
-        cgpa: parseFloat(formData.cgpa),
-        uid: user!.uid,
-        timestamp: Timestamp.now(),
-      };
-
       if (existingDocId) {
         const ref = doc(db, "submissions", existingDocId);
         await updateDoc(ref, submission);
@@ -96,8 +78,6 @@ export default function Home() {
 
       setSubmitted(true);
       setSuccess(true);
-
-      // auto-dismiss after 4 seconds
       setTimeout(() => setSuccess(false), 4000);
     } catch (err) {
       console.error("Error submitting form:", err);

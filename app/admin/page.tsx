@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { db } from "@/lib/firebase";
 import {
   collection,
   getDocs,
@@ -37,8 +35,6 @@ interface ExportRow {
 }
 
 export default function AdminPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,17 +44,8 @@ export default function AdminPage() {
   const [stream, setStream] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.push("/login");
-      } else {
-        setUser(currentUser);
-        await fetchSubmissions();
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+    fetchSubmissions();
+  }, []);
 
   const fetchSubmissions = async () => {
     try {
@@ -191,14 +178,13 @@ export default function AdminPage() {
     exportToCSV(eligibleData, `${companyKey}_eligible.csv`);
   };
 
-  if (!user) return null;
-
   return (
     <main className="min-h-screen bg-gray-100 py-10 px-4 sm:px-8">
       <h1 className="text-4xl font-medium text-center mb-10 text-gray-800">
         Admin Dashboard
       </h1>
 
+      {/* Company Criteria Form */}
       <section className="bg-white p-6 rounded-xl shadow-md max-w-3xl mx-auto mb-10">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">
           Company Criteria
@@ -247,6 +233,7 @@ export default function AdminPage() {
         </div>
       </section>
 
+      {/* Submission Table */}
       {loading ? (
         <p className="text-center text-gray-600">Loading submissions...</p>
       ) : (
@@ -305,7 +292,7 @@ export default function AdminPage() {
                         onClick={() => removeEligibility(s.id)}
                         className="bg-yellow-500 text-white px-1 py-1 rounded hover:bg-yellow-600"
                       >
-                        Remove Eligiblity
+                        Remove Eligibility
                       </button>
                       <button
                         onClick={() => deleteSubmission(s.id)}
