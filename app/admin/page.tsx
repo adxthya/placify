@@ -10,6 +10,7 @@ import {
   orderBy,
   updateDoc,
   doc,
+  deleteDoc,
 } from "firebase/firestore";
 import { Timestamp as FBTimestamp } from "firebase/firestore";
 
@@ -128,6 +129,21 @@ export default function AdminPage() {
     }
   };
 
+  const deleteSubmission = async (id: string) => {
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this submission?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await deleteDoc(doc(db, "submissions", id));
+      await fetchSubmissions();
+    } catch (err) {
+      console.error("Error deleting submission:", err);
+      alert("Failed to delete submission.");
+    }
+  };
+
   const exportToCSV = (data: ExportRow[], filename: string) => {
     const headers = Object.keys(data[0]).join(",");
     const rows = data.map((row) =>
@@ -179,7 +195,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-gray-100 py-10 px-4 sm:px-8">
-      <h1 className="text-4xl font-bold text-center mb-10 text-gray-800">
+      <h1 className="text-4xl font-medium text-center mb-10 text-gray-800">
         Admin Dashboard
       </h1>
 
@@ -278,18 +294,24 @@ export default function AdminPage() {
                       {isEligible ? "✅" : "❌"}
                     </td>
                     <td className="px-3 py-2">{date}</td>
-                    <td className="px-3 py-2 space-x-2 space-y-2">
+                    <td className="px-3 py-2 space-y-2 flex flex-col w-[170px]">
                       <button
                         onClick={() => markEligible(s.id)}
                         className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
                       >
-                        ✅ Mark Eligible
+                        Mark Eligible
                       </button>
                       <button
                         onClick={() => removeEligibility(s.id)}
-                        className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                        className="bg-yellow-500 text-white px-1 py-1 rounded hover:bg-yellow-600"
                       >
-                        ❌ Remove
+                        Remove Eligiblity
+                      </button>
+                      <button
+                        onClick={() => deleteSubmission(s.id)}
+                        className="bg-red-600 text-white px-1 py-1 rounded hover:bg-red-700"
+                      >
+                        Delete Submission
                       </button>
                     </td>
                   </tr>
